@@ -1,7 +1,11 @@
 import sys
+import os
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QIcon
 from gui.main_window import MainWindow
+
+_ICON_PATH = os.path.join(os.path.dirname(__file__), "icon.svg")
 
 STYLESHEET = """
 * {
@@ -185,6 +189,8 @@ QToolTip {
 def main():
     app = QApplication(sys.argv)
     app.setApplicationName("Konsave GUI")
+    if os.path.exists(_ICON_PATH):
+        app.setWindowIcon(QIcon(_ICON_PATH))
     app.setStyleSheet(STYLESHEET)
     window = MainWindow()
     window.show()
