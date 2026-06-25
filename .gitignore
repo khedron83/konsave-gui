@@ -1,7 +1,18 @@
-.venv/
+# Rust / Tauri
+target/
+dist/
+gen/
+
+# JS
+node_modules/
+
+# Python (legacy)
 __pycache__/
 *.pyc
-*.pyo
-*.egg-info/
-dist/
-build/
+.venv/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store

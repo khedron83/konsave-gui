@@ -1,0 +1,33 @@
+{
+  "productName": "Konsave GUI",
+  "version": "0.1.0",
+  "identifier": "io.github.khedron83.KonsaveGui",
+  "build": {
+    "beforeBuildCommand": "npm run build",
+    "beforeDevCommand": "npm run dev",
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:5173"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Konsave GUI",
+        "width": 960,
+        "height": 620,
+        "minWidth": 700,
+        "minHeight": 480
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/icon.png",
+      "icons/icon.ico"
+    ]
+  }
+}
