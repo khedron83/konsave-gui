@@ -5,6 +5,7 @@ export default function SettingsDialog({ settings, onClose, onSaved }) {
   const [url, setUrl] = useState(settings.nextcloud_url || "");
   const [username, setUsername] = useState(settings.nextcloud_username || "");
   const [password, setPassword] = useState(settings.nextcloud_password || "");
+  const [verifySsl, setVerifySsl] = useState(settings.verify_ssl ?? true);
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
@@ -14,6 +15,7 @@ export default function SettingsDialog({ settings, onClose, onSaved }) {
         nextcloud_url: url || null,
         nextcloud_username: username || null,
         nextcloud_password: password || null,
+        verify_ssl: verifySsl,
       };
       await invoke("save_settings", { s });
       onSaved(s);
@@ -57,6 +59,21 @@ export default function SettingsDialog({ settings, onClose, onSaved }) {
             Use an app password from Nextcloud → Settings → Security for best practice.
             Profiles sync to/from a <code>konsave/</code> folder in your Nextcloud.
           </span>
+        </div>
+        <div>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+            <input
+              type="checkbox"
+              checked={verifySsl}
+              onChange={(e) => setVerifySsl(e.target.checked)}
+            />
+            Verify SSL certificate
+          </label>
+          {!verifySsl && (
+            <span className="dialog-path" style={{ marginTop: 4, display: "block", color: "#fbbf24" }}>
+              Disabled — accepts self-signed certificates.
+            </span>
+          )}
         </div>
 
         <div className="dialog-row">

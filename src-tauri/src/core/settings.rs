@@ -6,7 +6,11 @@ pub struct Settings {
     pub nextcloud_url: Option<String>,
     pub nextcloud_username: Option<String>,
     pub nextcloud_password: Option<String>,
+    #[serde(default = "default_true")]
+    pub verify_ssl: bool,
 }
+
+fn default_true() -> bool { true }
 
 impl Default for Settings {
     fn default() -> Self {
@@ -14,6 +18,7 @@ impl Default for Settings {
             nextcloud_url: None,
             nextcloud_username: None,
             nextcloud_password: None,
+            verify_ssl: true,
         }
     }
 }

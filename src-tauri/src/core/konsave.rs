@@ -490,9 +490,12 @@ fn parse_knsv_names(propfind_xml: &str) -> Vec<String> {
         .collect()
 }
 
-pub async fn sync_push(url: &str, username: &str, password: &str) -> Result<u32, String> {
+pub async fn sync_push(url: &str, username: &str, password: &str, verify_ssl: bool) -> Result<u32, String> {
     let base = webdav_base(url, username);
-    let client = reqwest::Client::new();
+    let client = reqwest::ClientBuilder::new()
+        .danger_accept_invalid_certs(!verify_ssl)
+        .build()
+        .map_err(|e| e.to_string())?;
 
     // Create remote konsave/ dir (ignore error if already exists)
     client
@@ -528,9 +531,12 @@ pub async fn sync_push(url: &str, username: &str, password: &str) -> Result<u32,
     Ok(count)
 }
 
-pub async fn sync_pull(url: &str, username: &str, password: &str) -> Result<u32, String> {
+pub async fn sync_pull(url: &str, username: &str, password: &str, verify_ssl: bool) -> Result<u32, String> {
     let base = webdav_base(url, username);
-    let client = reqwest::Client::new();
+    let client = reqwest::ClientBuilder::new()
+        .danger_accept_invalid_certs(!verify_ssl)
+        .build()
+        .map_err(|e| e.to_string())?;
 
     let resp = client
         .request(reqwest::Method::from_bytes(b"PROPFIND").unwrap(), &base)

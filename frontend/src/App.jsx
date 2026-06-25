@@ -116,6 +116,7 @@ export default function App() {
         url: settings.nextcloud_url,
         username: settings.nextcloud_username,
         password: settings.nextcloud_password,
+        verifySsl: settings.verify_ssl ?? true,
       }),
       "Pushing to Nextcloud…"
     );
@@ -133,6 +134,7 @@ export default function App() {
         url: settings.nextcloud_url,
         username: settings.nextcloud_username,
         password: settings.nextcloud_password,
+        verifySsl: settings.verify_ssl ?? true,
       }),
       "Pulling from Nextcloud…"
     );
