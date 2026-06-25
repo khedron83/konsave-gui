@@ -3,12 +3,18 @@ use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Settings {
-    pub nextcloud_path: Option<String>,
+    pub nextcloud_url: Option<String>,
+    pub nextcloud_username: Option<String>,
+    pub nextcloud_password: Option<String>,
 }
 
 impl Default for Settings {
     fn default() -> Self {
-        Settings { nextcloud_path: None }
+        Settings {
+            nextcloud_url: None,
+            nextcloud_username: None,
+            nextcloud_password: None,
+        }
     }
 }
 

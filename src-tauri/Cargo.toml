@@ -21,3 +21,4 @@ tokio = { version = "1", features = ["full"] }
 walkdir = "2"
 regex = "1"
 chrono = { version = "0.4", features = ["clock"] }
+reqwest = { version = "0.12", features = ["multipart"] }

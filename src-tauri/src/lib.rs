@@ -76,13 +76,13 @@ async fn write_config(text: String) -> Result<(), String> {
 // ── Nextcloud sync ─────────────────────────────────────────────────────────
 
 #[tauri::command]
-async fn sync_push(nextcloud_path: String) -> Result<u32, String> {
-    konsave::sync_push(&nextcloud_path)
+async fn sync_push(url: String, username: String, password: String) -> Result<u32, String> {
+    konsave::sync_push(&url, &username, &password).await
 }
 
 #[tauri::command]
-async fn sync_pull(nextcloud_path: String) -> Result<u32, String> {
-    konsave::sync_pull(&nextcloud_path)
+async fn sync_pull(url: String, username: String, password: String) -> Result<u32, String> {
+    konsave::sync_pull(&url, &username, &password).await
 }
 
 // ── App run ────────────────────────────────────────────────────────────────

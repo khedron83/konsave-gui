@@ -469,41 +469,107 @@ pub fn write_config_text(text: &str) -> Result<(), String> {
     fs::write(config_file(), text).map_err(|e| e.to_string())
 }
 
-// ── Nextcloud sync ─────────────────────────────────────────────────────────
+// ── Nextcloud WebDAV sync ──────────────────────────────────────────────────
 
-pub fn sync_push(nextcloud_path: &str) -> Result<u32, String> {
-    let nc_dir = Path::new(nextcloud_path).join("konsave");
-    fs::create_dir_all(&nc_dir).map_err(|e| e.to_string())?;
+fn webdav_base(url: &str, username: &str) -> String {
+    format!(
+        "{}/remote.php/dav/files/{}/konsave/",
+        url.trim_end_matches('/'),
+        username
+    )
+}
+
+fn parse_knsv_names(propfind_xml: &str) -> Vec<String> {
+    // Extract filenames from <d:href> or <D:href> elements ending in .knsv
+    let re = regex::Regex::new(r"<[dD]:href>([^<]+\.knsv)</[dD]:href>").unwrap();
+    re.captures_iter(propfind_xml)
+        .filter_map(|cap| {
+            cap.get(1)
+                .and_then(|m| m.as_str().split('/').last().map(String::from))
+        })
+        .collect()
+}
+
+pub async fn sync_push(url: &str, username: &str, password: &str) -> Result<u32, String> {
+    let base = webdav_base(url, username);
+    let client = reqwest::Client::new();
+
+    // Create remote konsave/ dir (ignore error if already exists)
+    client
+        .request(reqwest::Method::from_bytes(b"MKCOL").unwrap(), &base)
+        .basic_auth(username, Some(password))
+        .send()
+        .await
+        .ok();
+
     let profiles = list_profiles()?;
+    let temp_dir = std::env::temp_dir();
     let mut count = 0u32;
+
     for p in &profiles {
-        export_profile(&p.name, &nc_dir.to_string_lossy())?;
+        let temp_path = temp_dir.join(format!("{}.knsv", p.name));
+        export_profile(&p.name, &temp_dir.to_string_lossy())?;
+        let bytes = fs::read(&temp_path).map_err(|e| e.to_string())?;
+        fs::remove_file(&temp_path).ok();
+
+        client
+            .put(format!("{}{}.knsv", base, p.name))
+            .basic_auth(username, Some(password))
+            .header("Content-Type", "application/octet-stream")
+            .body(bytes)
+            .send()
+            .await
+            .map_err(|e| e.to_string())?
+            .error_for_status()
+            .map_err(|e| e.to_string())?;
+
         count += 1;
     }
     Ok(count)
 }
 
-pub fn sync_pull(nextcloud_path: &str) -> Result<u32, String> {
-    let nc_dir = Path::new(nextcloud_path).join("konsave");
-    if !nc_dir.exists() {
-        return Ok(0);
+pub async fn sync_pull(url: &str, username: &str, password: &str) -> Result<u32, String> {
+    let base = webdav_base(url, username);
+    let client = reqwest::Client::new();
+
+    let resp = client
+        .request(reqwest::Method::from_bytes(b"PROPFIND").unwrap(), &base)
+        .header("Depth", "1")
+        .basic_auth(username, Some(password))
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    if resp.status() == 404 {
+        return Ok(0); // remote dir doesn't exist yet
     }
+
+    let xml = resp.text().await.map_err(|e| e.to_string())?;
+    let remote_files = parse_knsv_names(&xml);
     let existing: Vec<String> = list_profiles()?.into_iter().map(|p| p.name).collect();
+    let temp_dir = std::env::temp_dir();
     let mut count = 0u32;
-    for e in fs::read_dir(&nc_dir).map_err(|e| e.to_string())? {
-        let e = e.map_err(|e| e.to_string())?;
-        let path = e.path();
-        if path.extension().and_then(|x| x.to_str()) == Some("knsv") {
-            let name = path
-                .file_stem()
-                .and_then(|s| s.to_str())
-                .unwrap_or("")
-                .to_string();
-            if !existing.contains(&name) {
-                import_profile(&path.to_string_lossy())?;
-                count += 1;
-            }
+
+    for filename in &remote_files {
+        let name = filename.trim_end_matches(".knsv").to_string();
+        if existing.contains(&name) {
+            continue;
         }
+        let bytes = client
+            .get(format!("{}{}", base, filename))
+            .basic_auth(username, Some(password))
+            .send()
+            .await
+            .map_err(|e| e.to_string())?
+            .bytes()
+            .await
+            .map_err(|e| e.to_string())?;
+
+        let temp_path = temp_dir.join(filename.as_str());
+        fs::write(&temp_path, &bytes).map_err(|e| e.to_string())?;
+        import_profile(&temp_path.to_string_lossy())?;
+        fs::remove_file(&temp_path).ok();
+        count += 1;
     }
     Ok(count)
 }

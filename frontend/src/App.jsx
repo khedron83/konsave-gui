@@ -103,25 +103,37 @@ export default function App() {
     setStatus(`Imported "${name}".`);
   };
 
+  const ncReady = settings?.nextcloud_url && settings?.nextcloud_username && settings?.nextcloud_password;
+
   const onSyncPush = async () => {
-    if (!settings?.nextcloud_path) {
-      setStatus("Set a Nextcloud folder in Settings first.");
+    if (!ncReady) {
+      setStatus("Configure Nextcloud credentials in Settings first.");
+      setShowSettings(true);
       return;
     }
     const count = await run(
-      () => invoke("sync_push", { nextcloudPath: settings.nextcloud_path }),
+      () => invoke("sync_push", {
+        url: settings.nextcloud_url,
+        username: settings.nextcloud_username,
+        password: settings.nextcloud_password,
+      }),
       "Pushing to Nextcloud…"
     );
     setStatus(`Pushed ${count} profile${count !== 1 ? "s" : ""} to Nextcloud.`);
   };
 
   const onSyncPull = async () => {
-    if (!settings?.nextcloud_path) {
-      setStatus("Set a Nextcloud folder in Settings first.");
+    if (!ncReady) {
+      setStatus("Configure Nextcloud credentials in Settings first.");
+      setShowSettings(true);
       return;
     }
     const count = await run(
-      () => invoke("sync_pull", { nextcloudPath: settings.nextcloud_path }),
+      () => invoke("sync_pull", {
+        url: settings.nextcloud_url,
+        username: settings.nextcloud_username,
+        password: settings.nextcloud_password,
+      }),
       "Pulling from Nextcloud…"
     );
     await loadProfiles();
@@ -191,16 +203,16 @@ export default function App() {
           <button
             className="btn-ghost"
             onClick={onSyncPush}
-            disabled={busy || !settings?.nextcloud_path}
-            title={settings?.nextcloud_path ? `Push to ${settings.nextcloud_path}/konsave/` : "Set Nextcloud path in Settings"}
+            disabled={busy}
+            title={ncReady ? `Push to ${settings.nextcloud_url}/konsave/` : "Set Nextcloud credentials in Settings"}
           >
             ↑ Nextcloud
           </button>
           <button
             className="btn-ghost"
             onClick={onSyncPull}
-            disabled={busy || !settings?.nextcloud_path}
-            title={settings?.nextcloud_path ? `Pull from ${settings.nextcloud_path}/konsave/` : "Set Nextcloud path in Settings"}
+            disabled={busy}
+            title={ncReady ? `Pull from ${settings.nextcloud_url}/konsave/` : "Set Nextcloud credentials in Settings"}
           >
             ↓ Nextcloud
           </button>
